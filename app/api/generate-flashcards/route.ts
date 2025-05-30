@@ -1,13 +1,25 @@
 import { NextResponse } from "next/server";
 import { OpenAI } from "openai";
 
-const client = new OpenAI({
-  apiKey: process.env.SUTRA_API_KEY,
-  baseURL: "https://api.two.ai/v2",
-});
-
 export async function POST(req: Request) {
   try {
+    // Get API key from Authorization header
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json(
+        { error: "API key is required in Authorization header" },
+        { status: 401 }
+      );
+    }
+
+    const apiKey = authHeader.substring(7); // Remove "Bearer " prefix
+
+    // Initialize OpenAI client with the provided API key
+    const client = new OpenAI({
+      apiKey,
+      baseURL: "https://api.two.ai/v2",
+    });
+
     const { inputText, sourceLanguage, targetLanguage, cardCount, focus } =
       await req.json();
 

@@ -5,6 +5,15 @@ export interface Flashcard {
   example?: string;
 }
 
+export interface FlashcardGenerationParams {
+  inputText: string;
+  sourceLanguage: string;
+  targetLanguage: string;
+  cardCount: number;
+  focus: string;
+  apiKey?: string;
+}
+
 export interface Language {
   code: string;
   name: string;
@@ -13,13 +22,4 @@ export interface Language {
 export interface ContentFocusOption {
   value: string;
   label: string;
-}
-
-export interface FlashcardGenerationParams {
-  inputText: string;
-  sourceLanguage: string;
-  targetLanguage: string;
-  cardCount: number;
-  focus: string;
-  apiKey: string;
 }

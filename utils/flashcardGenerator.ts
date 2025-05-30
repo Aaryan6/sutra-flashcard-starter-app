@@ -1,50 +1,58 @@
 import { Flashcard, FlashcardGenerationParams } from "@/types";
 
+// Call the actual API endpoint to generate flashcards
 export async function generateFlashcards(
   params: FlashcardGenerationParams
 ): Promise<Flashcard[]> {
+  const {
+    inputText,
+    sourceLanguage,
+    targetLanguage,
+    cardCount,
+    focus,
+    apiKey,
+  } = params;
+
+  if (!apiKey) {
+    throw new Error("API key is required");
+  }
+
   try {
+    // Call the API route with the parameters
     const response = await fetch("/api/generate-flashcards", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`, // Pass API key in header
       },
-      body: JSON.stringify(params),
+      body: JSON.stringify({
+        inputText,
+        sourceLanguage,
+        targetLanguage,
+        cardCount,
+        focus,
+      }),
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw new Error(errorData?.error || `Error: ${response.status}`);
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to generate flashcards");
     }
 
-    const data = await response.json();
+    const flashcards = await response.json();
 
-    // Check if the response is an array of flashcards directly
-    if (Array.isArray(data)) {
-      return data;
+    // Ensure we have valid flashcards with all required fields
+    if (!Array.isArray(flashcards) || flashcards.length === 0) {
+      throw new Error("No flashcards were generated");
     }
 
-    // Check if the response contains a flashcards array
-    if (data.flashcards && Array.isArray(data.flashcards)) {
-      return data.flashcards;
-    }
-
-    // If we get a different structure, try to find an array
-    const possibleArrays = Object.values(data).filter(
-      (value) =>
-        Array.isArray(value) &&
-        value.length > 0 &&
-        typeof value[0] === "object" &&
-        "front" in value[0] &&
-        "back" in value[0]
-    );
-
-    if (possibleArrays.length > 0) {
-      return possibleArrays[0] as Flashcard[];
-    }
-
-    console.error("Unexpected response format:", data);
-    return [];
+    // Verify and fix any flashcards missing required fields
+    return flashcards.map((card, index) => ({
+      id: card.id || `card-${index}`,
+      front: card.front || "Missing term",
+      back: card.back || "Missing translation",
+      example: card.example,
+    }));
   } catch (error) {
     console.error("Error generating flashcards:", error);
     throw error;
